@@ -124,56 +124,58 @@ while isCaptureImages:
             extractedTexts.extend(pytesseract.image_to_string(thresh, config=custom_config).splitlines())
             extractedTexts.extend(pytesseract.image_to_string(image, config=custom_config).splitlines())
 
-            for i in range(0,len(medicineNames)):
-                matches = process.extract(medicineNames[i],extractedTexts, scorer=fuzz.ratio)
-                print("Percentages:\n",matches[0][1])
-                if matches[0][1] > percentage and percentage > 30:
-                    percentage = matches[0][1]
-                    medicineName = medicineNames[i]
-                    matchedtext = matches[0][0]
-                    frontImagePath = os.path.join(IMG_DIR,image_name)
+            if len(extractedTexts) > 0:
+                for i in range(0,len(medicineNames)):
+                    matches = process.extract(medicineNames[i],extractedTexts, scorer=fuzz.ratio)
+                    print("Percentages:\n",matches[0][1])
+                    if matches[0][1] > percentage and percentage > 30:
+                        percentage = matches[0][1]
+                        medicineName = medicineNames[i]
+                        matchedtext = matches[0][0]
+                        frontImagePath = os.path.join(IMG_DIR,image_name)
         
-        #Extracting datefilled texts
-        dateFilledTexts = ["datefilled","filled","date filled"]
-        similarTexts = []
-        for i in range(0,len(dateFilledTexts)):
-            matches = process.extract(dateFilledTexts[i],extractedTexts, scorer=fuzz.ratio)
-            if matches[0][1] > 60:
-                print(matches[0][1],matches[0][0])
-                similarTexts.append(matches[0][0])
-        print("Similar texts..!\n", similarTexts)
-        noDateExtracted = True
-        for i in range(0,len(similarTexts)):
-            try:
-                dateFilled = parser.parse(similarTexts[i],fuzzy=True)
-                noDateExtracted = False
-                break
-            except:
-                print("except block")
-                continue
-        if noDateExtracted:
-            print("date not extracted..!")
-            dateFilled = "not found..!" #NULL/None can be used for database
+        if len(extractedTexts) > 0:
+            #Extracting datefilled texts
+            dateFilledTexts = ["datefilled","filled","date filled"]
+            similarTexts = []
+            for i in range(0,len(dateFilledTexts)):
+                matches = process.extract(dateFilledTexts[i],extractedTexts, scorer=fuzz.ratio)
+                if matches[0][1] > 60:
+                    print(matches[0][1],matches[0][0])
+                    similarTexts.append(matches[0][0])
+            print("Similar texts..!\n", similarTexts)
+            noDateExtracted = True
+            for i in range(0,len(similarTexts)):
+                try:
+                    dateFilled = parser.parse(similarTexts[i],fuzzy=True)
+                    noDateExtracted = False
+                    break
+                except:
+                    print("except block")
+                    continue
+            if noDateExtracted:
+                print("date not extracted..!")
+                dateFilled = "not found..!" #NULL/None can be used for database
 
-        print("Date filled is {}\n".format(dateFilled))
+            print("Date filled is {}\n".format(dateFilled))
 
-        #Extracting quantity
-        quantityTexts = ["QTY","qty"]
-        percentage = 0
-        quantityText = ""
-        for i in range(0,len(quantityTexts)):
-            matches = process.extract(quantityTexts[i],extractedTexts,scorer=fuzz.ratio)
-            for i in range(0,len(matches)):
-                if re.search(r'\d',matches[i][0]):
-                    if matches[i][1] > percentage:
-                        quantityText = matches[i][0]
-            
-        if quantityText == "":
-            print("Quantity not extracted..!")
-        else:
-            print("Quantity extracted text..!",quantityText)
-            temp = re.findall(r'\d+',quantityText)
-            quantity = temp[0]
+            #Extracting quantity
+            quantityTexts = ["QTY","qty"]
+            percentage = 0
+            quantityText = ""
+            for i in range(0,len(quantityTexts)):
+                matches = process.extract(quantityTexts[i],extractedTexts,scorer=fuzz.ratio)
+                for i in range(0,len(matches)):
+                    if re.search(r'\d',matches[i][0]):
+                        if matches[i][1] > percentage:
+                            quantityText = matches[i][0]
+                
+            if quantityText == "":
+                print("Quantity not extracted..!")
+            else:
+                print("Quantity extracted text..!",quantityText)
+                temp = re.findall(r'\d+',quantityText)
+                quantity = temp[0]
 
         #store the data in DB.
         sql_stmt = """insert into medicines(name,datefilled,quantity,refillsleft,imagepath,folderpath) values(%s,%s,%s,%s,%s,%s)"""
