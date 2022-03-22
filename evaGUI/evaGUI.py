@@ -1,6 +1,8 @@
 import PySimpleGUI as sg
 import time
 import cv2
+import saveImages
+import textExtraction
 
 def time_as_int():
     return int(round(time.time() * 100))
@@ -14,9 +16,12 @@ camera_Heigth = 240 # 320 # 480 # 780  # 960
 frameSize = (camera_Width, camera_Heigth)
 startReadingFrames = False
 startVideo = False
+imgDirPath = ""
+images = [] #stores the images of each pill bottle and sends them to saveImages file. 
+imageCount = 0
 
 startPage = [[sg.Text('EVA',justification='center',font=('Helvetica',48))],
-          [sg.Text('Never miss medications again..!',justification="center",font=('Helvetica',36))],
+          [sg.Text('Never miss medications again..!',justification="center",font=('Calibri',36))],
           [sg.Button('Get Started->',key='getStarted')]
           ]
 
@@ -25,14 +30,16 @@ mainPage = [
 ]
 
 instructionPage = [
-    [sg.Text('Capture images covering entire label of pill bottle',justification="center",font=('Helvetica',36))],
-    [sg.Text('Hold the bottle closer to camera',justification="center",font=('Helvetica',36))],
-    [sg.Text('Make sure there is proper lighting',justification="center",font=('Helvetica',36))]
+    [sg.Text('Instructions:',justification="center",font=('Calibri',45))],
+    [sg.Text('Capture images covering entire label of pill bottle',justification="center",font=('Calibri',36))],
+    [sg.Text('Hold the bottle closer to camera',justification="center",font=('Calibri',36))],
+    [sg.Text('Make sure there is proper lighting',justification="center",font=('Calibri',36))],
+    [sg.Button('Next',key='goToCameraPage')]
 ]
 
 cameraPage = [
 [sg.Image(filename="",key="cam")],
-[sg.Button('Done',key="doneCapturing",**button_graph),sg.Button('Capture Image',key='captureImage',**button_graph)]
+[sg.Button('Done',key="doneCapturing",**button_graph),sg.Button('Capture Images',key='captureImage',**button_graph)]
 ]
 
 layout = [[sg.Text(key='-EXPAND-', font='ANY 1', pad=(0, 0))],  # the thing that expands from top
@@ -62,7 +69,7 @@ current_time, paused_time, paused = 0, 0, False
 start_time = time_as_int()
 
 while True:
-    event, values = window.read(timeout=3)
+    event, values = window.read(timeout=1)
     print(event, values)
     if event in (sg.WIN_CLOSED, 'Exit'):
         break
@@ -72,12 +79,26 @@ while True:
     elif event == 'addMedicine':
         window['mainPage'].update(visible=False)
         window['instructionPage'].update(visible=True)
-        time.sleep(15)
+        #time.sleep(15)
+    elif event == "goToCameraPage":
         window['instructionPage'].update(visible=False)
         window['cameraPage'].update(visible=True)
-        video_capture = cv2.VideoCapture(0,cv2.CAP_DSHOW)
         startVideo = True
         startReadingFrames = True
+    elif event == "captureImage":
+        imageCount += 1
+        window['captureImage'].update(text=f"Capture Images({imageCount})")
+        images.append(frameOrig)
+    elif event == "doneCapturing":
+        imageCount = 0 
+        startReadingFrames = False
+        imgDirPath = saveImages.saveImages(images)
+        images = []
+        textExtraction.beginOCR(imgDirPath)
+        video_capture.release()
+        cv2.destroyAllWindows()
+        window['cameraPage'].update(visible=False)
+        window['mainPage'].update(visible=True)
     if startVideo:
         video_capture = cv2.VideoCapture(0)
         startVideo = False
@@ -87,5 +108,4 @@ while True:
         imgbytes = cv2.imencode(".png", frame)[1].tobytes()
         window["cam"].update(data=imgbytes)
 
-cv2.destroyAllWindows()
 window.close()
