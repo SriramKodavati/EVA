@@ -3,6 +3,7 @@ import time
 import cv2
 import saveImages
 import textExtraction
+import saveToDb
 
 def time_as_int():
     return int(round(time.time() * 100))
@@ -11,8 +12,8 @@ def time_as_int():
 sg.theme('Black')
 button_graph = {'size':(12,3),'button_color':("white","#F4564F"),'font':('Calibri',36),'pad':(20,20)}
 # Camera Settings
-camera_Width  = 320 # 480 # 640 # 1024 # 1280
-camera_Heigth = 240 # 320 # 480 # 780  # 960
+camera_Width  = 500 # 480 # 640 # 1024 # 1280
+camera_Heigth = 300 # 320 # 480 # 780  # 960
 frameSize = (camera_Width, camera_Heigth)
 startReadingFrames = False
 startVideo = False
@@ -50,20 +51,24 @@ layout = [[sg.Text(key='-EXPAND-', font='ANY 1', pad=(0, 0))],  # the thing that
           sg.Column(cameraPage,visible=False,key='cameraPage')
           ]]
 
+print(sg.Window.get_screen_size())
+w, h = sg.Window.get_screen_size()
 window = sg.Window('EVA', layout,
                    no_titlebar=False,
                    auto_size_buttons=False,
+                   size=(w,h),
                    keep_on_top=True,
                    grab_anywhere=True,
                    element_padding=(0, 0),
                    finalize=True,
                    element_justification='c',
                    right_click_menu=sg.MENU_RIGHT_CLICK_EDITME_EXIT)
+#window.Size(w,h)
 window['startPage'].expand(True, True, True)
 #window['mainPage'].expand(True,True,True)
 window['-EXPAND-'].expand(True, True, True)
 window['-EXPAND2-'].expand(True, False, True)
-window.Maximize()
+#window.Maximize()
 
 current_time, paused_time, paused = 0, 0, False
 start_time = time_as_int()
@@ -91,10 +96,12 @@ while True:
         images.append(frameOrig)
     elif event == "doneCapturing":
         imageCount = 0 
+        window['captureImage'].update(text=f"Capture Images({imageCount})")
         startReadingFrames = False
         imgDirPath = saveImages.saveImages(images)
         images = []
-        textExtraction.beginOCR(imgDirPath)
+        pillInfo = textExtraction.beginOCR(imgDirPath)
+        saveToDb.saveToDb(pillInfo)
         video_capture.release()
         cv2.destroyAllWindows()
         window['cameraPage'].update(visible=False)

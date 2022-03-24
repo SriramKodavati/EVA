@@ -19,30 +19,33 @@ def thresholding(image):
 def beginOCR(imgDirPath):         #Optical Character Recognition from the images.
     conn = psycopg2.connect(
     host="localhost",
-    database="postgres",
+    database="EVA",
     user="postgres",
     password="postgres"
     )
     cur = conn.cursor()
+
+    pillInfo = {}
 
     print("Starting Tesseract OCR..!") #Beginning text extraction using Tesseract OCR.
     #medicineNames = ["ROSUVASTATIN", "Tamsulosin HCL 0.4 MG cap sunp", "Cyclobenzaprine 5 MG", "docusate sodium 100 MG capsule", "Ibuprofen Tablet 800 MG"] 
 
     #Getting medicine names from database
     medicineNames = []
-    cur.execute("select name from medicinenames")
+    cur.execute("select name from medicines")
     data = cur.fetchall()
 
     for i in range(0,len(data)):
         medicineNames.append(data[i][0])
+    print(medicineNames)
 
     #Pill table attributes intialization.
-    medicineName = "MedicineNameNone"
-    dateFilled = 9/9/99
-    quantity = 99
-    refillsLeft = 9
-    frontImagePath = "FolderPathNone"  
-    folderPath = imgDirPath
+    pillInfo['medicineName'] = "MedicineNameNone"
+    pillInfo['dateFilled'] = 9/9/99
+    pillInfo['quantity'] = 99
+    pillInfo['refillsLeft'] = 9
+    pillInfo['frontImagePath'] = "FolderPathNone"  
+    pillInfo['folderPath'] = imgDirPath
     #imageFolderPath variable will be initialized when capturing the images itself.  
 
     percentage = 0
@@ -66,16 +69,16 @@ def beginOCR(imgDirPath):         #Optical Character Recognition from the images
 
         extractedTexts.extend(pytesseract.image_to_string(thresh, config=custom_config).splitlines())
         extractedTexts.extend(pytesseract.image_to_string(image, config=custom_config).splitlines())
-
+        print(extractedTexts)
         if len(extractedTexts) > 0:
             for i in range(0,len(medicineNames)):
                 matches = process.extract(medicineNames[i],extractedTexts, scorer=fuzz.ratio)
                 print("Percentages:\n",matches[0][1])
                 if matches[0][1] > percentage and percentage > 30:
                     percentage = matches[0][1]
-                    medicineName = medicineNames[i]
+                    pillInfo['medicineName'] = medicineNames[i]
                     matchedtext = matches[0][0]
-                    frontImagePath = os.path.join(imgDirPath,image_name)
+                    pillInfo['frontImagePath'] = os.path.join(imgDirPath,image_name)
         
     if len(extractedTexts) > 0:
         #Extracting datefilled texts
@@ -86,11 +89,11 @@ def beginOCR(imgDirPath):         #Optical Character Recognition from the images
             if matches[0][1] > 60:
                 print(matches[0][1],matches[0][0])
                 similarTexts.append(matches[0][0])
-        print("Similar texts..!\n", similarTexts)
+        print("Texts with date filled words..!\n", similarTexts)
         noDateExtracted = True
         for i in range(0,len(similarTexts)):
             try:
-                dateFilled = parser.parse(similarTexts[i],fuzzy=True)
+                pillInfo['dateFilled'] = parser.parse(similarTexts[i],fuzzy=True)
                 noDateExtracted = False
                 break
             except:
@@ -98,9 +101,9 @@ def beginOCR(imgDirPath):         #Optical Character Recognition from the images
                 continue
         if noDateExtracted:
             print("date not extracted..!")
-            dateFilled = "not found..!" #NULL/None can be used for database
+            pillInfo['dateFilled'] = "not found..!" #NULL/None can be used for database
 
-        print("Date filled is {}\n".format(dateFilled))
+        print("Date filled is {}\n".format(pillInfo['dateFilled']))
 
         #Extracting quantity
         quantityTexts = ["QTY","qty"]
@@ -118,9 +121,12 @@ def beginOCR(imgDirPath):         #Optical Character Recognition from the images
         else:
             print("Quantity extracted text..!",quantityText)
             temp = re.findall(r'\d+',quantityText)
-            quantity = temp[0]
-    print(medicineName,dateFilled,quantity,refillsLeft,frontImagePath,folderPath)
+            pillInfo['quantity'] = temp[0]
+    print(pillInfo)
     cur.close()
     conn.close()
+    return pillInfo
+
+#beginOCR("C:\EVA\integrate\iphoneCaptures\medicine1")
 
 
