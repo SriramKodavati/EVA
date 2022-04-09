@@ -78,7 +78,7 @@ def beginOCR(imgDirPath):         #Optical Character Recognition from the images
             for i in range(0,len(medicineNames)):
                 matches = process.extract(medicineNames[i],extractedTexts, scorer=fuzz.ratio)
                 print("Percentages:\n",matches[0][1])
-                if matches[0][1] > percentage:
+                if matches[0][1] > percentage and matches[0][1]>30:
                     percentage = matches[0][1]
                     pillInfo['medicineName'] = medicineNames[i]
                     matchedtext = matches[0][0]
@@ -136,7 +136,7 @@ def beginOCR(imgDirPath):         #Optical Character Recognition from the images
     conn.close()
     return pillInfo
 
-beginOCR("C:\EVA\integrate\iphoneCaptures\medicine2")
+#beginOCR("C:\EVA\integrate\iphoneCaptures\medicine2")
 
 
 
