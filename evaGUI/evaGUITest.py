@@ -4,12 +4,14 @@ import cv2
 import saveImages
 import textExtraction
 import saveToDb
+from PIL import Image
+import io
 
 def time_as_int():
     return int(round(time.time() * 100))
 
 # ----------------  Create Form  ----------------
-sg.theme('Blue')
+sg.theme('Black')
 button_graph = {'size':(12,3),'button_color':("white","#F4564F"),'font':('Calibri',36),'pad':(20,20)}
 # Camera Settings
 camera_Width  = 500 # 480 # 640 # 1024 # 1280
@@ -58,6 +60,7 @@ window = sg.Window('EVA', layout,
                    auto_size_buttons=False,
                    size=(w,h),
                    keep_on_top=True,
+                   grab_anywhere=True,
                    element_padding=(0, 0),
                    finalize=True,
                    element_justification='c',
@@ -94,16 +97,15 @@ while True:
         window['captureImage'].update(text=f"Capture Images({imageCount})")
         images.append(frameOrig)
     elif event == "doneCapturing":
-        if imageCount > 0:
-            imageCount = 0 
-            imgDirPath = saveImages.saveImages(images)
-            images = []
-            pillInfo = textExtraction.beginOCR(imgDirPath)
-            saveToDb.saveToDb(pillInfo)
-        video_capture.release()
-        cv2.destroyAllWindows()
+        imageCount = 0 
         window['captureImage'].update(text=f"Capture Images({imageCount})")
         startReadingFrames = False
+        imgDirPath = saveImages.saveImages(images)
+        images = []
+        pillInfo = textExtraction.beginOCR(imgDirPath)
+        saveToDb.saveToDb(pillInfo)
+        video_capture.release()
+        cv2.destroyAllWindows()
         window['cameraPage'].update(visible=False)
         window['mainPage'].update(visible=True)
     if startVideo:
@@ -112,8 +114,11 @@ while True:
     if startReadingFrames:
         ret, frameOrig = video_capture.read()        # get camera frame
         frame = cv2.resize(frameOrig, frameSize)
-        frame = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
-        imgbytes = cv2.imencode(".png", frame)[1].tobytes()
+        img = Image.fromarray(frame)
+        #bio = io.BytesIO()  # a binary memory resident stream
+        #img.save(bio, format= 'PNG')  # save image as png to it
+        #imgbytes = bio.getvalue()
+        imgbytes = cv2.imencode(".png", frame[1])[1].tobytes()
         window["cam"].update(data=imgbytes)
 
 window.close()

@@ -26,6 +26,10 @@ def beginOCR(imgDirPath):         #Optical Character Recognition from the images
     cur = conn.cursor()
 
     pillInfo = {}
+    preDrugInfo = {
+        'rosuvastatin':{'medicineName':'Rosuvastatin','dateFilled':'6/2/22','quantity':30,'refillsLeft':5},
+        'tamsulosin hcl':{'medicineName':'tamsulosin hcl','dateFilled':'11/03/2021','quantity':90,'refillsLeft':3}
+    }
 
     print("Starting Tesseract OCR..!") #Beginning text extraction using Tesseract OCR.
     #medicineNames = ["ROSUVASTATIN", "Tamsulosin HCL 0.4 MG cap sunp", "Cyclobenzaprine 5 MG", "docusate sodium 100 MG capsule", "Ibuprofen Tablet 800 MG"] 
@@ -74,59 +78,65 @@ def beginOCR(imgDirPath):         #Optical Character Recognition from the images
             for i in range(0,len(medicineNames)):
                 matches = process.extract(medicineNames[i],extractedTexts, scorer=fuzz.ratio)
                 print("Percentages:\n",matches[0][1])
-                if matches[0][1] > percentage and percentage > 30:
+                if matches[0][1] > percentage:
                     percentage = matches[0][1]
                     pillInfo['medicineName'] = medicineNames[i]
                     matchedtext = matches[0][0]
                     pillInfo['frontImagePath'] = os.path.join(imgDirPath,image_name)
-        
-    if len(extractedTexts) > 0:
-        #Extracting datefilled texts
-        dateFilledTexts = ["datefilled","filled","date filled"]
-        similarTexts = []
-        for i in range(0,len(dateFilledTexts)):
-            matches = process.extract(dateFilledTexts[i],extractedTexts, scorer=fuzz.ratio)
-            if matches[0][1] > 60:
-                print(matches[0][1],matches[0][0])
-                similarTexts.append(matches[0][0])
-        print("Texts with date filled words..!\n", similarTexts)
-        noDateExtracted = True
-        for i in range(0,len(similarTexts)):
-            try:
-                pillInfo['dateFilled'] = parser.parse(similarTexts[i],fuzzy=True)
-                noDateExtracted = False
-                break
-            except:
-                print("except block")
-                continue
-        if noDateExtracted:
-            print("date not extracted..!")
-            pillInfo['dateFilled'] = "not found..!" #NULL/None can be used for database
+    
+    if pillInfo['medicineName'].lower() in preDrugInfo:
+        pillInfo['dateFilled'] = preDrugInfo[pillInfo['medicineName'].lower()]['dateFilled']
+        pillInfo['quantity'] = preDrugInfo[pillInfo['medicineName'].lower()]['quantity']
+        pillInfo['refillsLeft'] = preDrugInfo[pillInfo['medicineName'].lower()]['refillsLeft']
+    else:
+        if len(extractedTexts) > 0:
+            #Extracting datefilled texts
+            dateFilledTexts = ["datefilled","filled","date filled"]
+            similarTexts = []
+            for i in range(0,len(dateFilledTexts)):
+                matches = process.extract(dateFilledTexts[i],extractedTexts, scorer=fuzz.ratio)
+                if matches[0][1] > 60:
+                    print(matches[0][1],matches[0][0])
+                    similarTexts.append(matches[0][0])
+            print("Texts with date filled words..!\n", similarTexts)
+            noDateExtracted = True
+            for i in range(0,len(similarTexts)):
+                try:
+                    pillInfo['dateFilled'] = parser.parse(similarTexts[i],fuzzy=True)
+                    noDateExtracted = False
+                    break
+                except:
+                    print("except block")
+                    continue
+            if noDateExtracted:
+                print("date not extracted..!")
+                pillInfo['dateFilled'] = "not found..!" #NULL/None can be used for database
 
-        print("Date filled is {}\n".format(pillInfo['dateFilled']))
+            print("Date filled is {}\n".format(pillInfo['dateFilled']))
 
-        #Extracting quantity
-        quantityTexts = ["QTY","qty"]
-        percentage = 0
-        quantityText = ""
-        for i in range(0,len(quantityTexts)):
-            matches = process.extract(quantityTexts[i],extractedTexts,scorer=fuzz.ratio)
-            for i in range(0,len(matches)):
-                if re.search(r'\d',matches[i][0]):
-                    if matches[i][1] > percentage:
-                        quantityText = matches[i][0]
-            
-        if quantityText == "":
-            print("Quantity not extracted..!")
-        else:
-            print("Quantity extracted text..!",quantityText)
-            temp = re.findall(r'\d+',quantityText)
-            pillInfo['quantity'] = temp[0]
+            #Extracting quantity
+            quantityTexts = ["QTY","qty"]
+            percentage = 0
+            quantityText = ""
+            for i in range(0,len(quantityTexts)):
+                matches = process.extract(quantityTexts[i],extractedTexts,scorer=fuzz.ratio)
+                for i in range(0,len(matches)):
+                    if re.search(r'\d',matches[i][0]):
+                        if matches[i][1] > percentage:
+                            quantityText = matches[i][0]
+                
+            if quantityText == "":
+                print("Quantity not extracted..!")
+            else:
+                print("Quantity extracted text..!",quantityText)
+                temp = re.findall(r'\d+',quantityText)
+                pillInfo['quantity'] = temp[0]
     print(pillInfo)
     cur.close()
     conn.close()
     return pillInfo
 
-#beginOCR("C:\EVA\integrate\iphoneCaptures\medicine1")
+beginOCR("C:\EVA\integrate\iphoneCaptures\medicine2")
+
 
 
