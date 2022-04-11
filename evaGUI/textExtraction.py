@@ -1,4 +1,3 @@
-from asyncio.windows_events import NULL
 import cv2
 import os
 import numpy as np
@@ -20,8 +19,8 @@ def thresholding(image):
 def beginOCR(imgDirPath):         #Optical Character Recognition from the images.
     conn = psycopg2.connect(
     host="localhost",
-    database="EVA",
-    user="postgres",
+    database="pi",
+    user="pi",
     password="postgres"
     )
     cur = conn.cursor()
@@ -29,8 +28,8 @@ def beginOCR(imgDirPath):         #Optical Character Recognition from the images
     pillInfo = {}
     
     preDrugInfo = {
-        'rosuvastatin':{'medicineName':'Rosuvastatin','dateFilled':'6/2/22','quantity':30,'refillsLeft':5,'refillDate':1},
-        'tamsulosin hcl':{'medicineName':'tamsulosin hcl','dateFilled':'11/03/2021','quantity':90,'refillsLeft':3,'refillDate':1}
+        'rosuvastatin':{'medicineName':'Rosuvastatin','dateFilled':'6/2/22','quantity':30,'refillsLeft':5,'timesPerDay':1},
+        'tamsulosin hcl':{'medicineName':'tamsulosin hcl','dateFilled':'11/03/2021','quantity':90,'refillsLeft':3,'timesPerDay':1}
     }
 
     print("Starting Tesseract OCR..!") #Beginning text extraction using Tesseract OCR.
@@ -46,13 +45,13 @@ def beginOCR(imgDirPath):         #Optical Character Recognition from the images
     print(medicineNames)
 
     #Pill table attributes intialization.
-    pillInfo['medicineName'] = NULL
-    pillInfo['dateFilled'] = NULL
-    pillInfo['quantity'] = NULL
-    pillInfo['refillsLeft'] = NULL
-    pillInfo['frontImagePath'] = NULL
+    pillInfo['medicineName'] = 'not found'
+    pillInfo['dateFilled'] = 'not found'
+    pillInfo['quantity'] = 'not found'
+    pillInfo['refillsLeft'] = 'not found'
+    pillInfo['frontImagePath'] = 'not found'
     pillInfo['folderPath'] = imgDirPath
-    pillInfo['refillDate'] = NULL
+    pillInfo['timesPerDay'] = 'not found'
     #imageFolderPath variable will be initialized when capturing the images itself.  
 
     percentage = 0
@@ -91,7 +90,7 @@ def beginOCR(imgDirPath):         #Optical Character Recognition from the images
         pillInfo['dateFilled'] = preDrugInfo[pillInfo['medicineName'].lower()]['dateFilled']
         pillInfo['quantity'] = preDrugInfo[pillInfo['medicineName'].lower()]['quantity']
         pillInfo['refillsLeft'] = preDrugInfo[pillInfo['medicineName'].lower()]['refillsLeft']
-        pillInfo['refillDate'] = preDrugInfo[pillInfo['medicineName'].lower()]['refillDate']
+        pillInfo['timesPerDay'] = preDrugInfo[pillInfo['medicineName'].lower()]['timesPerDay']
     else:
         if len(extractedTexts) > 0:
             #Extracting datefilled texts
@@ -143,8 +142,3 @@ def beginOCR(imgDirPath):         #Optical Character Recognition from the images
     cur.close()
     conn.close()
     return pillInfo
-
-beginOCR("C:\EVA\integrate\iphoneCaptures\medicine1")
-
-
-

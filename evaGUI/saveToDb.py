@@ -21,21 +21,19 @@ def getlastmedicineId(cur):
 def saveToDb(pillInfo):
     conn = psycopg2.connect(
     host="localhost",
-    database="EVA",
-    user="postgres",
+    database="pi",
+    user="pi",
     password="postgres"
     )
     cur = conn.cursor()
     lastMedicineId = getlastmedicineId(cur)
     lastMedicineId += 1
     #store the data in DB.
-    sql_stmt = """insert into medicine1(id,medname,datefilled,quantity,refillsleft,imagepath,folderpath,refilldate) values(%s,%s,%s,%s,%s,%s,%s,%s)"""
-    data = (lastMedicineId,pillInfo['medicineName'], pillInfo['dateFilled'], pillInfo['quantity'], pillInfo['refillsLeft'], pillInfo['frontImagePath'], pillInfo['folderPath'],pillInfo['refillDate'])
+    sql_stmt = """insert into medicine1(id,medname,datefilled,quantity,refillsleft,imagepath,folderpath,timesperday) values(%s,%s,%s,%s,%s,%s,%s,%s)"""
+    data = (lastMedicineId,pillInfo['medicineName'], pillInfo['dateFilled'], pillInfo['quantity'], pillInfo['refillsLeft'], pillInfo['frontImagePath'], pillInfo['folderPath'],pillInfo['timesPerDay'])
     cur.execute(sql_stmt,data)
     print("------------------------------------------------")
     print("Saved to DB.")
     conn.commit()
     cur.close()
     conn.close()
-
-
