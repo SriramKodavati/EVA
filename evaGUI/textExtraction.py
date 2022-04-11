@@ -1,3 +1,4 @@
+from asyncio.windows_events import NULL
 import cv2
 import os
 import numpy as np
@@ -28,8 +29,8 @@ def beginOCR(imgDirPath):         #Optical Character Recognition from the images
     pillInfo = {}
     
     preDrugInfo = {
-        #'rosuvastatin':{'medicineName':'Rosuvastatin','dateFilled':'6/2/22','quantity':30,'refillsLeft':5},
-        'tamsulosin hcl':{'medicineName':'tamsulosin hcl','dateFilled':'11/03/2021','quantity':90,'refillsLeft':3}
+        'rosuvastatin':{'medicineName':'Rosuvastatin','dateFilled':'6/2/22','quantity':30,'refillsLeft':5,'refillDate':1},
+        'tamsulosin hcl':{'medicineName':'tamsulosin hcl','dateFilled':'11/03/2021','quantity':90,'refillsLeft':3,'refillDate':1}
     }
 
     print("Starting Tesseract OCR..!") #Beginning text extraction using Tesseract OCR.
@@ -45,12 +46,13 @@ def beginOCR(imgDirPath):         #Optical Character Recognition from the images
     print(medicineNames)
 
     #Pill table attributes intialization.
-    pillInfo['medicineName'] = "MedicineNameNone"
-    pillInfo['dateFilled'] = 9/9/99
-    pillInfo['quantity'] = 99
-    pillInfo['refillsLeft'] = 9
-    pillInfo['frontImagePath'] = "FolderPathNone"  
+    pillInfo['medicineName'] = NULL
+    pillInfo['dateFilled'] = NULL
+    pillInfo['quantity'] = NULL
+    pillInfo['refillsLeft'] = NULL
+    pillInfo['frontImagePath'] = NULL
     pillInfo['folderPath'] = imgDirPath
+    pillInfo['refillDate'] = NULL
     #imageFolderPath variable will be initialized when capturing the images itself.  
 
     percentage = 0
@@ -89,6 +91,7 @@ def beginOCR(imgDirPath):         #Optical Character Recognition from the images
         pillInfo['dateFilled'] = preDrugInfo[pillInfo['medicineName'].lower()]['dateFilled']
         pillInfo['quantity'] = preDrugInfo[pillInfo['medicineName'].lower()]['quantity']
         pillInfo['refillsLeft'] = preDrugInfo[pillInfo['medicineName'].lower()]['refillsLeft']
+        pillInfo['refillDate'] = preDrugInfo[pillInfo['medicineName'].lower()]['refillDate']
     else:
         if len(extractedTexts) > 0:
             #Extracting datefilled texts

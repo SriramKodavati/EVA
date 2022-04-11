@@ -29,8 +29,8 @@ def saveToDb(pillInfo):
     lastMedicineId = getlastmedicineId(cur)
     lastMedicineId += 1
     #store the data in DB.
-    sql_stmt = """insert into medicine1(id,medname,datefilled,quantity,refillsleft,imagepath,folderpath) values(%s,%s,%s,%s,%s,%s,%s)"""
-    data = (lastMedicineId,pillInfo['medicineName'], pillInfo['dateFilled'], pillInfo['quantity'], pillInfo['refillsLeft'], pillInfo['frontImagePath'], pillInfo['folderPath'])
+    sql_stmt = """insert into medicine1(id,medname,datefilled,quantity,refillsleft,imagepath,folderpath,refilldate) values(%s,%s,%s,%s,%s,%s,%s,%s)"""
+    data = (lastMedicineId,pillInfo['medicineName'], pillInfo['dateFilled'], pillInfo['quantity'], pillInfo['refillsLeft'], pillInfo['frontImagePath'], pillInfo['folderPath'],pillInfo['refillDate'])
     cur.execute(sql_stmt,data)
     print("------------------------------------------------")
     print("Saved to DB.")
