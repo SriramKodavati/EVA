@@ -26,8 +26,9 @@ def beginOCR(imgDirPath):         #Optical Character Recognition from the images
     cur = conn.cursor()
 
     pillInfo = {}
+    
     preDrugInfo = {
-        'rosuvastatin':{'medicineName':'Rosuvastatin','dateFilled':'6/2/22','quantity':30,'refillsLeft':5},
+        #'rosuvastatin':{'medicineName':'Rosuvastatin','dateFilled':'6/2/22','quantity':30,'refillsLeft':5},
         'tamsulosin hcl':{'medicineName':'tamsulosin hcl','dateFilled':'11/03/2021','quantity':90,'refillsLeft':3}
     }
 
@@ -95,14 +96,18 @@ def beginOCR(imgDirPath):         #Optical Character Recognition from the images
             similarTexts = []
             for i in range(0,len(dateFilledTexts)):
                 matches = process.extract(dateFilledTexts[i],extractedTexts, scorer=fuzz.ratio)
-                if matches[0][1] > 60:
-                    print(matches[0][1],matches[0][0])
-                    similarTexts.append(matches[0][0])
+                if i in range(len(matches)):
+                    if re.search(r'\d',matches[i][0]):
+                        print("strings with nos: ",matches[i][0],matches[i][1])
+                        if matches[i][1] > 50:
+                            print(matches[0][1],matches[0][0])
+                            similarTexts.append(matches[0][0])
+
             print("Texts with date filled words..!\n", similarTexts)
             noDateExtracted = True
             for i in range(0,len(similarTexts)):
                 try:
-                    pillInfo['dateFilled'] = parser.parse(similarTexts[i],fuzzy=True)
+                    pillInfo['dateFilled'] = parser.parse(similarTexts[i],fuzzy=True).date()
                     noDateExtracted = False
                     break
                 except:
@@ -136,7 +141,7 @@ def beginOCR(imgDirPath):         #Optical Character Recognition from the images
     conn.close()
     return pillInfo
 
-#beginOCR("C:\EVA\integrate\iphoneCaptures\medicine2")
+beginOCR("C:\EVA\integrate\iphoneCaptures\medicine1")
 
 
 
